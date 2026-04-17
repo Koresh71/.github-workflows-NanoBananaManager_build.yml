@@ -1,0 +1,51 @@
+name: Build NanoBananaManager PRO
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Install DMG Tool
+        run: brew install create-dmg
+
+      - name: Build Mac App
+        run: |
+          pyinstaller --noconfirm --onefile --windowed \
+          --icon "n_logo.icns" --add-data "n_logo.icns:." \
+          --name "NanoBananaManager" "NanoBananaManager_mac.py"
+
+      - name: Create DMG
+        run: |
+          mkdir -p dist/dmg
+          cp -r "dist/NanoBananaManager.app" dist/dmg/
+          create-dmg \
+            --volname "NanoBananaManager Installer" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "NanoBananaManager.app" 175 190 \
+            --hide-extension "NanoBananaManager.app" \
+            --app-drop-link 425 190 \
+            "dist/NanoBananaManager_Premium.dmg" \
+            "dist/dmg/"
+
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: NanoBananaManager-Mac-Package
+          path: dist/NanoBananaManager_Premium.dmg
